@@ -44,7 +44,7 @@ Before starting :checkered_flag:, you need to install the requirements in the re
 
 ```bash
 # Clone this project
-$ git clone https://github.com/{{YOUR_GITHUB_USERNAME}}/ontmetascript
+$ git clone https://github.com/SupaaSchnitzel/ontmetascript
 
 # Access
 $ cd ontmetascript
