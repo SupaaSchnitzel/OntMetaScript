@@ -17,7 +17,7 @@
 
 ## :dart: About ##
 
- A little python script that was developed during my master thesis. It accumulates Ontology metadata from .owl or .ttl files making my work easier. This script is not fully vetted and is just a quick python script made on the fly.
+ A little python script that was developed during my master thesis. It accumulates Ontology metadata from .owl or .ttl files making my work easier. This script is not fully vetted and is just a quick python script made on the fly. The data collected with this can be found under the following doi at zenodo.org 10.5281/zenodo.7895261
 
 ## :sparkles: Features ##
 
