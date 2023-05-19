@@ -35,10 +35,13 @@ The following tools were used in this project:
 - [Owlready2](https://github.com/pwin/owlready2)
 - [alive-progress](https://github.com/rsalmei/alive-progress)
 - [rdflib](https://github.com/RDFLib/rdflib)
+- [OntOlogy Pitfall Scanner!](https://oops.linkeddata.es/)
+- [Ontology Pitfall Scanner For FAIR](https://foops.linkeddata.es/FAIR_validator.html)
+- [Fair-Checker](https://fair-checker.france-bioinformatique.fr/check)
 
 ## :white_check_mark: Requirements ##
 
-Before starting :checkered_flag:, you need to install the requirements in the requirements.txt
+Before starting :checkered_flag: you need to install the requirements in the requirements.txt. :checkered_flag: Furthermore, an internet connection is reuqired as the FOOPS, OOPS and Faircheck reports are queried through API calls.
 
 ## :checkered_flag: Starting ##
 
