@@ -165,20 +165,23 @@ def get_oops_pitfalls(ontology_dir):
         xml_content = """<?xml version="1.0" encoding="UTF-8"?>
         <OOPSRequest>
           <OntologyUrl></OntologyUrl>
-          <OntologyContent>%s</OntologyContent>
+          <OntologyContent><![CDATA[ %s ]]></OntologyContent>
             <Pitfalls>2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 19, 20, 21, 22, 24, 25, 25, 26, 27, 28, 29</Pitfalls>
-            <OutputFormat>XML</OutputFormat>
-        </OOPSRequest>""" % (v)
-        headers = CaseInsensitiveDict()
-        headers["Accept"] = "application/json"
-        headers["Content-Type"] = "application/xml"
-        headers = {'Content-Type':'rdf/xml'}
+	      <OutputFormat>RDF/XML</OutputFormat>
+	    </OOPSRequest>""" % (v)
+        headers = {
+            'Connection': 'Keep-Alive',
+            'Accept': 'application/xml'
+        }
         os.makedirs(path, exist_ok=True)
         with open(ontpath, 'wb') as f:
-            with requests.post(url, headers=headers, data=xml_content, stream=True)as reply:
+            print("posting")
+            with requests.post(url, headers=headers, data=xml_content.encode('utf-8'), stream=True) as reply:
+                print("received reply")
+                print(reply.request)
                 reply.raw.decode_content = True
                 copyfileobj(reply.raw,f)
-        #sum_oops(path, "OOPSsum")
+        sum_oops(path, "OOPSsum")
 
 def get_oops_pitfalls2(ontology_dir, iri):
     """Generate OOPS report via sourcecode. Adapted from  https://github.com/OnToology/oops-report/blob/master/main.py
@@ -202,7 +205,7 @@ def get_oops_pitfalls2(ontology_dir, iri):
         headers = {'Content-Type':'rdf/xml'}
         os.makedirs(path, exist_ok=True)
         with open(ontpath, 'wb') as f:
-            with requests.post(url, headers=headers, data=xml_content, stream=True)as reply:
+            with requests.post(url, headers=headers, data=xml_content.encode('utf-8'), stream=True) as reply:
                 reply.raw.decode_content = True
                 copyfileobj(reply.raw,f)
         #sum_oops(path, "OOPSsum")
