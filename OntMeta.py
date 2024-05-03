@@ -552,40 +552,40 @@ if args.random_classes_fair_foops:
         dir = args.random_classes_fair_foops[1]
         bo = bool(args.random_classes_fair_foops[2])
         get_random_classes_fair_foops(n,dir,bo)
-    except Exception :
-        print("INT, DIR, boolean needed")
+    except Exception as e:
+        print(e)
 if args.foops:
     try:
         get_foops_report(args.foops[0],args.foops[1])
-    except Exception :
-        print("DIR, IRI needed")
+    except Exception as e:
+        print(e)
 if args.fair:
     try:
         get_faircheck_report(args.fair[0],args.fair[1])
-    except Exception :
-        print("DIR, IRI needed")
+    except Exception as e:
+        print(e)
 if args.oops:
     try:
-        get_faircheck_report(args.oops)
-    except Exception :
-        print("DIR needed")
+        get_oops_pitfalls(args.oops)
+    except Exception as e:
+        print(e)
 if args.reasoner:
     try:
-        get_faircheck_report(args.reasoner)
-    except Exception :
-        print("DIR needed")
+        run_reasoner(args.reasoner)
+    except Exception as e:
+        print(e)
 if args.sum_onts:
     try:
         sum_used_onts(args.sum_onts[0],args.sum_onts[1])
-    except Exception :
-        print("DIR, name needed")
+    except Exception as e:
+        print(e)
 if args.sum_classes_prop:
     try:
         sum_class_prop(args.sum_classes_prop[0],args.sum_classes_prop[1])
-    except Exception :
-        print("DIR, name needed")
+    except Exception as e:
+        print(e)
 if args.mean_fair_foops:
     try:
         mean_fair_foops(args.mean_fair_foops[0],args.mean_fair_foops[1])
-    except Exception :
-        print("DIR, name needed")
+    except Exception as e:
+        print(e)
