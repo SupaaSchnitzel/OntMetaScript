@@ -175,10 +175,7 @@ def get_oops_pitfalls(ontology_dir):
         }
         os.makedirs(path, exist_ok=True)
         with open(ontpath, 'wb') as f:
-            print("posting")
             with requests.post(url, headers=headers, data=xml_content.encode('utf-8'), stream=True) as reply:
-                print("received reply")
-                print(reply.request)
                 reply.raw.decode_content = True
                 copyfileobj(reply.raw,f)
         sum_oops(path, "OOPSsum")
