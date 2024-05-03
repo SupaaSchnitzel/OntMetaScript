@@ -184,7 +184,7 @@ def get_oops_pitfalls(ontology_dir):
         sum_oops(path, "OOPSsum")
 
 def get_oops_pitfalls2(ontology_dir, iri):
-    """Generate OOPS report via sourcecode. Adapted from  https://github.com/OnToology/oops-report/blob/master/main.py
+    """Generate OOPS report via iri. Adapted from  https://github.com/OnToology/oops-report/blob/master/main.py
 
     Args:
         ontology_dir (str): path to ontology file
@@ -409,123 +409,7 @@ def mean_fair_foops(dir, filename):
     with open(dir +filename+'.json', 'w') as f:
         json.dump(results,f)
 
-def get_missing_dabgeo():
-    """Helper function for my thesis, not used in script
-    """  
-    dir = './analysis/dabgeo/'
-    dir2 = './DABGEO_v1.0/'
-    filename = "missing.txt"
-    used = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dir) for f in filenames if os.path.splitext(f)[1] == '.txt' and "USEDONTS" in os.path.splitext(f)[0]] 
-    onts = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dir2) for f in filenames if os.path.splitext(f)[1] == '.owl']  
-    exceptions = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dir) for f in filenames if os.path.splitext(f)[1] == '.txt' and "Loadingexception" in os.path.splitext(f)[0]and filename not in os.path.splitext(f)[0]] 
-    all_json =  [os.path.join(dp, f) for dp, dn, filenames in os.walk(dir) for f in filenames if os.path.splitext(f)[1] == '.json']  
-    all_txt = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dir) for f in filenames if os.path.splitext(f)[1] == '.txt']  
-    foopsl = []
-    oopsl = []
-    fairl = []
-    usedl = []
-    results = {"total":len(onts),"LoadingError":len(exceptions), "oops":0, "foops":0, "fair":0}
-    for ont in onts:
-        ont = ont.split(".")[-2].split(os.path.sep)[-1]
-        a = False
-        for oops in all_txt:
-            if "OOPS" in oops and ont in oops:
-                a = True
-                continue
-        if not a:
-            oopsl.append(ont)
-        a = False
-        for oops in all_json:
-            if "FOOPS" in oops and ont in oops:
-                a = True
-                continue
-        if not a:
-            foopsl.append(ont)
-        a = False
-        for oops in all_json:
-            if "FAIR" in oops and ont in oops:
-                a = True
-                continue
-        if not a:
-            fairl.append(ont)
-        a = False
-        for oops in used:
-            if "USEDONTS" in oops and ont in oops:
-                a = True
-                continue
-        if not a:
-            usedl.append(ont)
-    results["fair"] = len(fairl)
-    results["oops"] = len(oopsl)
-    results["foops"] = len(foopsl)
-    """
-    with open(dir +filename+'.txt', 'a') as f:
-        for key, value in results.items():
-            f.write('\n')
-            f.write(key + "---" + str(value))
-        f.write("\n---------------------------------------------------------\n")
-        f.write("FAIR:\n")
-        for line in fairl:
-            f.write(line+"\n")
-        f.write("---------------------------------------------------------\n")
-        f.write("FOOPS:\n")
-        for line in foopsl:
-            f.write(line+"\n")
-        f.write("---------------------------------------------------------\n")
-        f.write("OOPs:\n")
-        for line in oopsl:
-            f.write(line+"\n")
-        f.write("---------------------------------------------------------\n")
-        f.write("Loading:\n")
-        for line in exceptions:
-            f.write(line+"\n")"""
-    try_again(oopsl,foopsl,fairl,onts, exceptions)
 
-def listhelper(lista,stringb):
-    """helper function for get_missing_dabgeo
-    """
-    for l in lista:
-        if stringb in l:
-            return l
-
-def try_again(oops,foops,fair, onts, e):
-    """helper function for get_missing_dabgeo
-    """
-    for ont in foops:
-        ontology_dir = listhelper(onts, ont)
-        g= Graph()
-        g.parse(ontology_dir)
-        res = ["common-domain/", "variant-domain/", "domain-task/"]
-        if int(ontology_dir.split(os.path.sep)[0].split("/")[-1][0])-1 == 2:
-            iri = "https://innoweb.mondragon.edu/ontologies/dabgeo/" + res[int(ontology_dir.split(os.path.sep)[0].split("/")[-1][0])-1] + ontology_dir.split(os.path.sep)[1] + "/" +ontology_dir.split(os.path.sep)[2] + "/" +ontology_dir.split(os.path.sep)[3] + "/1.0/"
-        else:
-            iri = "https://innoweb.mondragon.edu/ontologies/dabgeo/" + res[int(ontology_dir.split(os.path.sep)[0].split("/")[-1][0])-1] + ontology_dir.split(os.path.sep)[1] + "/" +ontology_dir.split(os.path.sep)[2] + "/1.0/"
-        get_foops_report(ont, iri)
-    for ont in fair:
-        ontology_dir = listhelper(onts, ont)
-        g= Graph()
-        g.parse(ontology_dir)
-        res = ["common-domain/", "variant-domain/", "domain-task/"]
-        if int(ontology_dir.split(os.path.sep)[0].split("/")[-1][0])-1 == 2:
-            iri = "https://innoweb.mondragon.edu/ontologies/dabgeo/" + res[int(ontology_dir.split(os.path.sep)[0].split("/")[-1][0])-1] + ontology_dir.split(os.path.sep)[1] + "/" +ontology_dir.split(os.path.sep)[2] + "/" +ontology_dir.split(os.path.sep)[3] + "/1.0/"
-        else:
-            iri = "https://innoweb.mondragon.edu/ontologies/dabgeo/" + res[int(ontology_dir.split(os.path.sep)[0].split("/")[-1][0])-1] + ontology_dir.split(os.path.sep)[1] + "/" +ontology_dir.split(os.path.sep)[2] + "/1.0/"
-        get_faircheck_report(ont, iri)
-    for ont in oops:
-        ontology_dir = listhelper(onts, ont)
-        g= Graph()
-        g.parse(ontology_dir)
-        res = ["common-domain/", "variant-domain/", "domain-task/"]
-        if int(ontology_dir.split(os.path.sep)[0].split("/")[-1][0])-1 == 2:
-            iri = "https://innoweb.mondragon.edu/ontologies/dabgeo/" + res[int(ontology_dir.split(os.path.sep)[0].split("/")[-1][0])-1] + ontology_dir.split(os.path.sep)[1] + "/" +ontology_dir.split(os.path.sep)[2] + "/" +ontology_dir.split(os.path.sep)[3] + "/1.0/"
-        else:
-            iri = "https://innoweb.mondragon.edu/ontologies/dabgeo/" + res[int(ontology_dir.split(os.path.sep)[0].split("/")[-1][0])-1] + ontology_dir.split(os.path.sep)[1] + "/" +ontology_dir.split(os.path.sep)[2] + "/1.0/"
-        get_oops_pitfalls2(ont, iri)
-    for ont in e:
-        ontology_dir = listhelper(onts, ont)
-        g= Graph()
-        g.parse(ontology_dir)
-        break
 
 
 parser = argparse.ArgumentParser(prog = 'OntMetaScript',
