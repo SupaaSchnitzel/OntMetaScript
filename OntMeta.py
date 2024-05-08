@@ -1,5 +1,6 @@
 from owlready2 import *
 from rdflib import Graph
+from rdflib.namespace import NamespaceManager
 from requests.structures import CaseInsensitiveDict
 from shutil import copyfileobj
 from alive_progress import alive_bar
@@ -34,7 +35,7 @@ def get_random_classes_fair_foops(n, ontology_dir, fair_foops):
     try:
         onto = get_ontology("file://"+ontology_dir).load()
     except Exception as e:
-        with open(path +"/"+ontname+"Loadingexception.txt", 'w') as f:
+        with open(path +"/"+ontname+"Exception_while_Loading.txt", 'w') as f:
                 f.write(str(e))
         return
     if onto.base_iri and fair_foops:
@@ -66,21 +67,26 @@ def get_used_onts( ontology_dir):
 
     Args:
         ontology_dir (str): path to ontology file
-    """    
-    ontname, ontpath, path = name_path_ontpath(ontology_dir=ontology_dir,filename="USEDONTS.txt")
+    """ 
+    
+    ontname, ontpath, path = name_path_ontpath(ontology_dir=ontology_dir,filename="_used_Ontologies.txt")
     try:
-        g = Graph()
+        g = Graph(bind_namespaces='none')
         g.parse(ontology_dir)
     except Exception as e:
-        with open(path +"/"+ontname+"Loadingexception.txt", 'w') as f:
+        g.close()
+        with open(path +"/"+ontname+"Exception_while_Loading.txt", 'w') as f:
                 f.write(str(e))
         return
-    used_onts = list(g.namespace_manager.namespaces())
+    nm = g.namespace_manager
+    used_onts = list(nm.namespaces())
+    g = None
+    nm = None
     os.makedirs(path, exist_ok=True)
     if( os.path.isfile(ontpath) and not os.path.getsize(ontpath) <= 0):
         return
     with open(str(ontpath), 'w') as f:
-        f.write("USED_Onts:" + str(len(used_onts)))
+        f.write("Used_Ontologies:" + str(len(used_onts)))
         f.write('\n')
         for ontname,iri in used_onts:
             f.write(ontname + ": " + str(iri))
@@ -107,10 +113,15 @@ def get_all_for_all_onts_in_dir(dir):
     onts = get_ont_files(dir)
     with alive_bar(len(onts), ctrl_c=False, title=f'Processed Onts ')  as bar:
         for o in onts:
+            o_old = None
             if(".ttl" in o):
+                o_old = o
                 o = ttl_to_owl(o)
             try:
-                get_used_onts(o)
+                if not o_old: 
+                    get_used_onts(o) 
+                else: 
+                    get_used_onts(o_old)
                 get_random_classes_fair_foops(5, o, True)
                 get_oops_pitfalls(o)
             except Exception as e:  
@@ -125,9 +136,9 @@ def run_reasoner(ontology_dir):
     Args:
         ontology_dir (str): path to ontology file
     """    
-    ontname, ontpath, path = name_path_ontpath(ontology_dir=ontology_dir,filename="reasonererror.txt")
-    onto = get_ontology("file://"+ontology_dir).load()
+    ontname, ontpath, path = name_path_ontpath(ontology_dir=ontology_dir,filename="_reasoner_error.txt")
     try:
+        onto = get_ontology("file://"+ontology_dir).load()
         with onto:     
             sync_reasoner()
     except Exception as e:
@@ -145,9 +156,10 @@ def ttl_to_owl(dir):
     Returns:
         str: path to owl ontology file
     """    
-    g= Graph()
+    g = Graph()
     g.parse(dir)
     g.serialize(format="pretty-xml", destination=dir.split(".ttl")[0]+".owl")
+    g.close()
     return dir.split(".ttl")[0]+".owl"
 
 def get_oops_pitfalls(ontology_dir):
@@ -156,7 +168,7 @@ def get_oops_pitfalls(ontology_dir):
     Args:
         ontology_dir (str): path to ontology file
     """    
-    ontname, ontpath, path = name_path_ontpath(ontology_dir=ontology_dir,filename="OOPS.txt")
+    ontname, ontpath, path = name_path_ontpath(ontology_dir=ontology_dir,filename="_OOPS.txt")
     while(not os.path.isfile(ontpath) or os.path.getsize(ontpath) <= 0):
         g= Graph()
         g.parse(ontology_dir)
@@ -173,12 +185,13 @@ def get_oops_pitfalls(ontology_dir):
             'Connection': 'Keep-Alive',
             'Accept': 'application/xml'
         }
+        g.close()
         os.makedirs(path, exist_ok=True)
         with open(ontpath, 'wb') as f:
             with requests.post(url, headers=headers, data=xml_content.encode('utf-8'), stream=True) as reply:
                 reply.raw.decode_content = True
                 copyfileobj(reply.raw,f)
-        sum_oops(path, "OOPSsum")
+        sum_oops(path, "Sum_OOPS_Pitfalls")
 
 def get_oops_pitfalls2(ontology_dir, iri):
     """Generate OOPS report via iri. Adapted from  https://github.com/OnToology/oops-report/blob/master/main.py
@@ -186,7 +199,7 @@ def get_oops_pitfalls2(ontology_dir, iri):
     Args:
         ontology_dir (str): path to ontology file
     """    
-    ontname, ontpath, path = name_path_ontpath(ontology_dir=ontology_dir,filename="OOPS.txt")
+    ontname, ontpath, path = name_path_ontpath(ontology_dir=ontology_dir,filename="_OOPS.txt")
     while(not os.path.isfile(ontpath) or os.path.getsize(ontpath) <= 0):
         url = "https://oops.linkeddata.es/rest"
         xml_content = """<?xml version="1.0" encoding="UTF-8"?>
@@ -205,7 +218,7 @@ def get_oops_pitfalls2(ontology_dir, iri):
             with requests.post(url, headers=headers, data=xml_content.encode('utf-8'), stream=True) as reply:
                 reply.raw.decode_content = True
                 copyfileobj(reply.raw,f)
-        #sum_oops(path, "OOPSsum")
+        sum_oops(path, "Sum_OOPS_Pitfalls")
 
 def get_foops_report(ontology_dir, iri):
     """Generate FOOPS report via iri.
@@ -214,7 +227,7 @@ def get_foops_report(ontology_dir, iri):
         ontology_dir (str): path to ontology file
         iri (str): ontology iri
     """    
-    ontname, ontpath, path = name_path_ontpath(ontology_dir=ontology_dir,filename="FOOPS.json")
+    ontname, ontpath, path = name_path_ontpath(ontology_dir=ontology_dir,filename="_FOOPS.json")
     while(not os.path.isfile(ontpath) or os.path.getsize(ontpath) <= 0):
         url = "https://foops.linkeddata.es/assessOntology"
         headers = CaseInsensitiveDict()
@@ -252,7 +265,7 @@ def get_faircheck_report(ontology_dir, iri):
         ontology_dir (str): path to ontology file
         iri (str): ontology iri
     """    
-    ontname, ontpath, path = name_path_ontpath(ontology_dir=ontology_dir,filename="FAIRCHECK.json")
+    ontname, ontpath, path = name_path_ontpath(ontology_dir=ontology_dir,filename="_Fair_Checker.json")
     while(not os.path.isfile(ontpath) or os.path.getsize(ontpath) <= 0):
         url = "https://fair-checker.france-bioinformatique.fr/api/check/metrics_all?url={0}".format(urllib.parse.quote(str(iri), safe=''))
         headers = CaseInsensitiveDict()
@@ -279,6 +292,7 @@ def parse_faircheck_json(payload):
         else:
             results[str(metric["metric"])[0]] += int(metric["score"])
     results["F"] /= 4
+    results["A"] /= 2
     results["I"] /= 3
     results["R"] /= 3
     results = {"mean" : results}
@@ -292,7 +306,7 @@ def sum_class_prop(dir,filename):
         dir (str): path to ontology rports (generated via get_random_classes_fair_foops)
         filename (str): filename where the sum should be saved
     """    
-    files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dir) for f in filenames if os.path.splitext(f)[1] == '.txt' and "OOPS" not in os.path.splitext(f)[0]and "exception" not in os.path.splitext(f)[0]and "USEDONTS" not in os.path.splitext(f)[0] and filename not in os.path.splitext(f)[0]]  
+    files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dir) for f in filenames if os.path.splitext(f)[1] == '.txt' and "_OOPS" not in os.path.splitext(f)[0]and "exception" not in os.path.splitext(f)[0]and "_used_Ontologies" not in os.path.splitext(f)[0] and filename not in os.path.splitext(f)[0]]  
     sum_classes = 0
     sum_anot_prop = 0
     sum_data_prop = 0
@@ -327,7 +341,7 @@ def sum_used_onts(dir,filename):
         dir (str): path to ontology rports (generated via get_used_onts)
         filename (str): filename where the sum should be saved
     """   
-    files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dir) for f in filenames if os.path.splitext(f)[1] == '.txt' and "USEDONTS" in os.path.splitext(f)[0]and filename not in os.path.splitext(f)[0]]  
+    files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dir) for f in filenames if os.path.splitext(f)[1] == '.txt' and "_used_Ontologies" in os.path.splitext(f)[0]and filename not in os.path.splitext(f)[0]]  
     results = {}
     with alive_bar(len(files), ctrl_c=False, title=f'Processed Onts ')  as bar:
         for file in files:
@@ -349,7 +363,7 @@ def sum_used_onts(dir,filename):
                     line = f.readline()
             bar()
     with open(dir +filename+'.txt', 'w') as f:
-        f.write("namespace --- iri" + " USED_Onts:" + str(len(results)))
+        f.write("namespace --- iri" + "/n Used Ontologies:" + str(len(results)))
         for key, value in results.items():
             f.write('\n')
             f.write(key + "---" + value)
@@ -361,7 +375,7 @@ def sum_oops(dir,filename):
         dir (str): path to ontology rports (generated via get_used_onts)
         filename (str): filename where the sum should be saved
     """   
-    files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dir) for f in filenames if os.path.splitext(f)[1] == '.txt' and "OOPS" in os.path.splitext(f)[0]and filename not in os.path.splitext(f)[0]]  
+    files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dir) for f in filenames if os.path.splitext(f)[1] == '.txt' and "_OOPS" in os.path.splitext(f)[0]and filename not in os.path.splitext(f)[0]]  
     results = {"Minor":0, "Important":0}
     with alive_bar(len(files), ctrl_c=False, title=f'Processed Onts ')  as bar:
         for file in files:
@@ -385,11 +399,12 @@ def mean_fair_foops(dir, filename):
         dir (str): path to ontology rports (generated via get_fair and get_foops)
         filename (str): filename where the sum should be saved
     """ 
-    files_foops = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dir) for f in filenames if os.path.splitext(f)[1] == '.json' and "FOOPS" in os.path.splitext(f)[0] and filename not in os.path.splitext(f)[0]]
-    files_fair = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dir) for f in filenames if os.path.splitext(f)[1] == '.json' and "FAIR" in os.path.splitext(f)[0]and filename not in os.path.splitext(f)[0]]  
+    files_foops = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dir) for f in filenames if os.path.splitext(f)[1] == '.json' and "_FOOPS" in os.path.splitext(f)[0] and filename not in os.path.splitext(f)[0]]
+    files_fair = [os.path.join(dp, f) for dp, dn, filenames in os.walk(dir) for f in filenames if os.path.splitext(f)[1] == '.json' and "Fair_Checker" in os.path.splitext(f)[0]and filename not in os.path.splitext(f)[0]]  
     results = {"FOOPS":0, "F":0, "A":0, "I":0, "R":0}
     with alive_bar(len(files_foops + files_fair), ctrl_c=False, title=f'Processed Onts ')  as bar:
         for file in files_foops + files_fair:
+            print(file)
             with open(file, "r") as f:
                 data = json.load(f)
                 if("FOOPS" in file):
@@ -398,6 +413,7 @@ def mean_fair_foops(dir, filename):
                     for key, value in data[0]["mean"].items():
                         results[key] += value
             bar()
+            print("end")
     results["FOOPS"] /= len(files_foops)
     results["F"] /= len(files_fair)
     results["A"] /= len(files_fair)
@@ -405,7 +421,6 @@ def mean_fair_foops(dir, filename):
     results["R"] /= len(files_fair)
     with open(dir +filename+'.json', 'w') as f:
         json.dump(results,f)
-
 
 
 
@@ -422,6 +437,7 @@ parser.add_argument("-r", "--reasoner", help="Ont_dir.Checks if Reasoner can be 
 parser.add_argument("-so", "--sum_onts", help="Dir, Name. Sums up the used onts of all ontologies in a dir and saves them in a file named Name. Used Ontologies report needed.",nargs=2)
 parser.add_argument("-scp", "--sum_classes_prop",help="Dir, Name. Sums up the classes and properties of all ontologies in a dir and saves them in a file named Name.Normal Report needed",nargs=2)
 parser.add_argument("-m", "--mean_fair_foops", help="Dir, Name. Means the Fair and foops score of all ontologies in a dir and saves them in a file named Name. FOOPS Report and FAIR Report needed",nargs=2)
+
 args = parser.parse_args()
 
 init()
